@@ -89,6 +89,9 @@ class Browser:
         if not pros_scroll < 0:
             self.scroll -= SCROLL_STEP
             self.draw()
+        else:
+            self.scroll = 0
+            self.draw()
 
     def mousewheel(self, e):
         """
@@ -117,13 +120,31 @@ def layout(text):
     """
     display_list = []
     cursor_x, cursor_y = HSTEP, VSTEP
-    for c in text:
-        display_list.append((cursor_x, cursor_y, c))
-        cursor_x += HSTEP
-        if cursor_x >= WIDTH - HSTEP:
-            cursor_y += VSTEP
-            cursor_x = HSTEP
+    # for c in text:
+    #     display_list.append((cursor_x, cursor_y, c))
+    #     cursor_x += HSTEP
+    #     if cursor_x >= WIDTH - HSTEP:
+    #         cursor_y += VSTEP
+    #         cursor_x = HSTEP
+    # return display_list
+
+    for line in text.split("\n"):
+        for word in line.split():
+            width = len(word) * HSTEP
+            if cursor_x + width >= WIDTH - HSTEP:
+                # if out of range
+                cursor_x = HSTEP
+                cursor_y += 2 ## Originally: VSTEP
+            for char in word:
+                display_list.append((cursor_x, cursor_y, char))
+                cursor_x += HSTEP
+            cursor_x += HSTEP
+
+        cursor_y += VSTEP ## Originally: VSTEP*2
+        cursor_x = HSTEP
+
     return display_list
+
 
 if __name__ == "__main__":
     import sys
