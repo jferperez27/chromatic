@@ -44,7 +44,7 @@ class Browser:
 
     def draw(self):
         """
-        Visualizes all characters onto screen
+        Visualizes all characters onto screen.
         """
         max_bottom = HEIGHT
 
@@ -70,7 +70,7 @@ class Browser:
 
     def scrolldown(self, e):
         """
-        Handles down arrow key event
+        Handles down arrow key event.
         """
         pros_scroll = self.scroll + SCROLL_STEP
 
@@ -82,7 +82,7 @@ class Browser:
 
     def scrollup(self, e):
         """
-        Handles up arrow key event
+        Handles up arrow key event.
         """
         pros_scroll = self.scroll - SCROLL_STEP
 
@@ -95,15 +95,51 @@ class Browser:
 
     def mousewheel(self, e):
         """
-        Handles basic scrolling gesture event
+        Handles basic scrolling gesture event.
         """
-        direction = -1 if e.delta > 0 else 1
-        self.scroll += direction * SCROLL_STEP
+        print(e.delta)
+
+        # limiter
+        if hasattr(self, "scrolling"):
+            if self.scrolling == True:
+                return
+
+        # OS inertia normalization
+        if sys.platform == "darwin":
+            delta = e.delta
+        else:
+            delta = e.delta / 120
+
+        pros_scroll_loc = self.scroll + (-1 * delta * 5)
+        
+        # DEBUG --
+        #print(f"pros {pros_scroll_loc}")
+        #print(f"cur {self.scroll}")
+
+        if pros_scroll_loc < 0:
+            self.scroll = 0
+        elif self.max_scroll > pros_scroll_loc:
+            self.scroll = pros_scroll_loc
+        else:
+            if self.scroll == self.max_scroll:
+                return
+            else:
+                self.scroll = self.max_scroll
+
+        self.scrolling = True
+        self.canvas.after(10, self.throttle_draw)
+
+    def throttle_draw(self):
+        """
+        Calls on draw to update visuals, used by mousewheel() to limit calls
+        on draw, decrease overall hardware strain.
+        """
         self.draw()
+        self.scrolling = False
 
     def on_scroll(self, *args):
         """
-        Handles basic mouse scrolling gesture event
+        Handles basic mouse scrolling gesture event.
         """
         if args[0] == "moveto":
             frac = float(args[1])
@@ -115,6 +151,9 @@ class Browser:
         self.draw()
 
     def window_resize(self, e):
+        """
+        Handles window resize logic.
+        """
         global WIDTH, HEIGHT
         if e.width != WIDTH and e.height != HEIGHT:
             WIDTH = e.width
