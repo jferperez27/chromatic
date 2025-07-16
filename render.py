@@ -2,6 +2,7 @@ import tkinter
 from tkinter import ttk
 from browse import URL
 import browse as b
+import re
 
 WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
@@ -40,6 +41,7 @@ class Browser:
         text = b.lex(body)
 
         self.display_list = layout(text)
+        self.text = text
         self.draw()
 
     def draw(self):
@@ -97,8 +99,6 @@ class Browser:
         """
         Handles basic scrolling gesture event.
         """
-        print(e.delta)
-
         # limiter
         if hasattr(self, "scrolling"):
             if self.scrolling == True:
@@ -158,6 +158,7 @@ class Browser:
         if e.width != WIDTH and e.height != HEIGHT:
             WIDTH = e.width
             HEIGHT = e.height
+            self.display_list = layout(self.text)
             self.draw()
 
 def layout(text):
@@ -166,25 +167,30 @@ def layout(text):
     """
     display_list = []
     cursor_x, cursor_y = HSTEP, VSTEP
-    # for c in text:
-    #     display_list.append((cursor_x, cursor_y, c))
-    #     cursor_x += HSTEP
-    #     if cursor_x >= WIDTH - HSTEP:
-    #         cursor_y += VSTEP
-    #         cursor_x = HSTEP
-    # return display_list
+
+    is_cjk = bool(re.search(r'[\u4e00-\u9fff]', text))
 
     for line in text.split("\n"):
-        for word in line.split():
-            width = len(word) * HSTEP
-            if cursor_x + width >= WIDTH - HSTEP:
-                # if out of range
-                cursor_x = HSTEP
-                cursor_y += 2 ## Originally: VSTEP
-            for char in word:
+        if is_cjk:
+            for char in line:
+                if cursor_x + HSTEP >= WIDTH - HSTEP:
+                    cursor_x = HSTEP
+                    cursor_y += VSTEP
                 display_list.append((cursor_x, cursor_y, char))
                 cursor_x += HSTEP
             cursor_x += HSTEP
+            pass
+        else:
+            for word in line.split():
+                width = len(word) * HSTEP
+                if cursor_x + width + HSTEP >= WIDTH - HSTEP:
+                    # if out of range
+                    cursor_x = HSTEP
+                    cursor_y += VSTEP ## Originally: VSTEP
+                for char in word:
+                    display_list.append((cursor_x, cursor_y, char))
+                    cursor_x += HSTEP
+                cursor_x += HSTEP
 
         cursor_y += VSTEP ## Originally: VSTEP*2
         cursor_x = HSTEP
