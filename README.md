@@ -9,9 +9,6 @@
   layout, and network handling in pure Python. It's a minimal, yet functional 
   web browser; ideal for educational purposes and low-level systems exploration.
 
-  The Chromatic Browser features absolutely no external libraries, making it a 
-  completely standaolone browser.
-
   *Chromatic is a completely standalone browser with absolutely no frameworks 
   or external packages, just* **raw code**.
   
