@@ -26,11 +26,10 @@ class Browser:
         self.window.bind("<MouseWheel>", self.mousewheel)
 
         # Scrollbar
-        scrollbar = ttk.Scrollbar(self.window, 
+        self.scrollbar = ttk.Scrollbar(self.window, 
                                   orient="vertical", 
                                   command = self.on_scroll)
-        self.canvas.configure(yscrollcommand=scrollbar.set)
-        scrollbar.place(relx = 1, rely = 0, relheight = 1, anchor = "ne")
+        self.scrollbar.place(relx = 1, rely = 0, relheight = 1, anchor = "ne")
 
     def load(self, url):
         """
@@ -50,20 +49,34 @@ class Browser:
 
         self.canvas.delete("all")
         for x, y, c in self.display_list:
-            if y > self.scroll + HEIGHT: 
-                max_bottom = y
-                continue
+            max_bottom = max(max_bottom, y)
+            if y > self.scroll + HEIGHT: continue
             if y + VSTEP < self.scroll: continue
-            self.canvas.create_text(x, y, text=c)
+            self.canvas.create_text(x, y - self.scroll, text=c)
+
+        self.max_scroll = max(0, max_bottom - self.canvas.winfo_height())
+
+        ## Update scrollbar y-value logic
+
+        self.canvas.config(scrollregion=(0, 0, WIDTH, self.max_scroll))
+
+        ## Custom scrolling logic
         
-        self.canvas.config(scrollregion=(0, 0, WIDTH, max_bottom))
+        start_frac = self.scroll / self.max_scroll if self.max_scroll else 0.0
+        visible_frac = self.canvas.winfo_height() / self.max_scroll if self.max_scroll else 1.0
+        self.scrollbar.set(start_frac, start_frac + visible_frac)
 
 
     def scrolldown(self, e):
         """
         Handles down arrow key event
         """
-        self.scroll += SCROLL_STEP
+        pros_scroll = self.scroll + SCROLL_STEP
+
+        if pros_scroll > self.max_scroll:
+            self.scroll = self.max_scroll
+        else:
+            self.scroll += SCROLL_STEP
         self.draw()
 
     def scrollup(self, e):
@@ -80,17 +93,31 @@ class Browser:
         """
         Handles basic scrolling gesture event
         """
-        direction = int(e.delta)
-
-        if direction == 1:
-            self.scrollup(e)
-        elif direction == -1:
-            self.scrolldown(e)
+        direction = -1 if e.delta > 0 else 1
+        self.scroll += direction * SCROLL_STEP
+        self.draw()
 
     def on_scroll(self, *args):
-        self.canvas.yview(*args)
-        self.scroll = int(self.canvas.canvasy(0))
+        """
+        Handles basic mouse scrolling gesture event
+        """
+        if args[0] == "moveto":
+            frac = float(args[1])
+            self.scroll = frac * self.max_scroll
+        elif args[0] == "scroll":
+            units = int(args[1])
+            self.scroll += units * 40
+        self.scroll = max(0, min(self.scroll, self.max_scroll))
         self.draw()
+
+    def update_scroll_logic(self, first, last):
+        if self.max_scroll:
+            start_frac = self.scroll / self.max_scroll
+            visible_frac = self.canvas.winfo_height() / (self.max_scroll + self.canvas.winfo_height())
+            self.scrollbar.set(start_frac, start_frac + visible_frac)
+        else:
+            self.scrollbar.set(0.0, 1.0)
+        
 
 
 def layout(text):
