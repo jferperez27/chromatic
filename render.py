@@ -1,4 +1,5 @@
 import tkinter
+from tkinter import ttk
 from browse import URL
 import browse as b
 
@@ -6,6 +7,7 @@ import browse as b
 WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
 SCROLL_STEP = 100
+MAX_Y = 600
 
 
 class Browser:
@@ -14,13 +16,21 @@ class Browser:
         self.canvas = tkinter.Canvas(
             self.window,
             width=WIDTH,
-            height=HEIGHT
+            height=HEIGHT,
+            scrollregion=(0, 0, WIDTH, HEIGHT)
         )
         self.canvas.pack()
         self.scroll = 0
         self.window.bind("<Down>", self.scrolldown)
         self.window.bind("<Up>", self.scrollup)
         self.window.bind("<MouseWheel>", self.mousewheel)
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(self.window, 
+                                  orient="vertical", 
+                                  command = self.on_scroll)
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.place(relx = 1, rely = 0, relheight = 1, anchor = "ne")
 
     def load(self, url):
         """
@@ -36,11 +46,18 @@ class Browser:
         """
         Visualizes all characters onto screen
         """
+        max_bottom = HEIGHT
+
         self.canvas.delete("all")
         for x, y, c in self.display_list:
-            if y > self.scroll + HEIGHT: continue
+            if y > self.scroll + HEIGHT: 
+                max_bottom = y
+                continue
             if y + VSTEP < self.scroll: continue
-            self.canvas.create_text(x, y - self.scroll, text=c)
+            self.canvas.create_text(x, y, text=c)
+        
+        self.canvas.config(scrollregion=(0, 0, WIDTH, max_bottom))
+
 
     def scrolldown(self, e):
         """
@@ -66,9 +83,14 @@ class Browser:
         direction = int(e.delta)
 
         if direction == 1:
-            self.scrolldown(e)
-        elif direction == -1:
             self.scrollup(e)
+        elif direction == -1:
+            self.scrolldown(e)
+
+    def on_scroll(self, *args):
+        self.canvas.yview(*args)
+        self.scroll = int(self.canvas.canvasy(0))
+        self.draw()
 
 
 def layout(text):
