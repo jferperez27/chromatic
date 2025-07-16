@@ -3,7 +3,6 @@ from tkinter import ttk
 from browse import URL
 import browse as b
 
-
 WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
 SCROLL_STEP = 100
@@ -19,12 +18,13 @@ class Browser:
             height=HEIGHT,
             scrollregion=(0, 0, WIDTH, HEIGHT)
         )
-        self.canvas.pack()
+        self.canvas.pack(fill="both", expand=True)
         self.scroll = 0
         self.window.title("Chromatic")
         self.window.bind("<Down>", self.scrolldown)
         self.window.bind("<Up>", self.scrollup)
         self.window.bind("<MouseWheel>", self.mousewheel)
+        self.window.bind("<Configure>", self.window_resize)
 
         # Scrollbar
         self.scrollbar = ttk.Scrollbar(self.window, 
@@ -113,6 +113,13 @@ class Browser:
             self.scroll += units * 40
         self.scroll = max(0, min(self.scroll, self.max_scroll))
         self.draw()
+
+    def window_resize(self, e):
+        global WIDTH, HEIGHT
+        if e.width != WIDTH and e.height != HEIGHT:
+            WIDTH = e.width
+            HEIGHT = e.height
+            self.draw()
 
 def layout(text):
     """
