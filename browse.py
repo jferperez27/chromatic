@@ -3,7 +3,6 @@ import ssl
 
 class URL:
     def __init__(self, url):
-        
         # Separate url and scheme
         self.scheme, url = url.split("://", 1)
         assert self.scheme in ["http", "https"]
@@ -26,6 +25,10 @@ class URL:
             self.port = int(port)
 
     def request(self):
+        """
+        Handles all logic of communicating to server to obtain connection,
+        returns page source code.
+        """
 
         # Instantiate socket for communication
         s = socket.socket(
@@ -75,7 +78,6 @@ def show(body):
     """
     Parses through each character in HTML code, redacts tags
     """
-
     in_tag = False
     for char in body:
         if char == "<":
@@ -86,6 +88,9 @@ def show(body):
             print(char, end="")
 
 def lex(body):
+    """
+    Parses through each character in HTML code, returns all text.
+    """
     text = ""
     in_tag = False
     for char in body:
@@ -98,6 +103,9 @@ def lex(body):
     return text
 
 def load(url):
+    """
+    Loads a URL by calling on helper methods, returns web text.
+    """
     body = url.request()
     return lex(body)
 

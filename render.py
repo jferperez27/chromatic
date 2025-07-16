@@ -20,8 +20,12 @@ class Browser:
         self.scroll = 0
         self.window.bind("<Down>", self.scrolldown)
         self.window.bind("<Up>", self.scrollup)
+        self.window.bind("<MouseWheel>", self.mousewheel)
 
     def load(self, url):
+        """
+        Obtains source code, delegates to other methods.
+        """
         body = url.request()
         text = b.lex(body)
 
@@ -29,6 +33,9 @@ class Browser:
         self.draw()
 
     def draw(self):
+        """
+        Visualizes all characters onto screen
+        """
         self.canvas.delete("all")
         for x, y, c in self.display_list:
             if y > self.scroll + HEIGHT: continue
@@ -36,17 +43,38 @@ class Browser:
             self.canvas.create_text(x, y - self.scroll, text=c)
 
     def scrolldown(self, e):
+        """
+        Handles down arrow key event
+        """
         self.scroll += SCROLL_STEP
         self.draw()
 
     def scrollup(self, e):
+        """
+        Handles up arrow key event
+        """
         pros_scroll = self.scroll - SCROLL_STEP
 
         if not pros_scroll < 0:
             self.scroll -= SCROLL_STEP
             self.draw()
 
+    def mousewheel(self, e):
+        """
+        Handles basic scrolling gesture event
+        """
+        direction = int(e.delta)
+
+        if direction == 1:
+            self.scrolldown(e)
+        elif direction == -1:
+            self.scrollup(e)
+
+
 def layout(text):
+    """
+    Formulates list containing all text and x,y coords for each character
+    """
     display_list = []
     cursor_x, cursor_y = HSTEP, VSTEP
     for c in text:
