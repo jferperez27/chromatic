@@ -21,6 +21,7 @@ class Browser:
         )
         self.canvas.pack()
         self.scroll = 0
+        self.window.title("Chromatic")
         self.window.bind("<Down>", self.scrolldown)
         self.window.bind("<Up>", self.scrollup)
         self.window.bind("<MouseWheel>", self.mousewheel)
@@ -61,7 +62,7 @@ class Browser:
         self.canvas.config(scrollregion=(0, 0, WIDTH, self.max_scroll))
 
         ## Custom scrolling logic
-        
+
         start_frac = self.scroll / self.max_scroll if self.max_scroll else 0.0
         visible_frac = self.canvas.winfo_height() / self.max_scroll if self.max_scroll else 1.0
         self.scrollbar.set(start_frac, start_frac + visible_frac)
@@ -109,16 +110,6 @@ class Browser:
             self.scroll += units * 40
         self.scroll = max(0, min(self.scroll, self.max_scroll))
         self.draw()
-
-    def update_scroll_logic(self, first, last):
-        if self.max_scroll:
-            start_frac = self.scroll / self.max_scroll
-            visible_frac = self.canvas.winfo_height() / (self.max_scroll + self.canvas.winfo_height())
-            self.scrollbar.set(start_frac, start_frac + visible_frac)
-        else:
-            self.scrollbar.set(0.0, 1.0)
-        
-
 
 def layout(text):
     """
