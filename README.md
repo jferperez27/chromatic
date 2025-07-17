@@ -1,16 +1,15 @@
 
   # Chromatic
-  A fully standalone web browser with **no external libraries**.
+  *Chromatic is a completely standalone browser with absolutely no frameworks 
+  or external packages, just* **raw code**.
 
-  Inspired by *Web Browser Engineering* by Pavel Panchekha and Chis Harrelson, 
-  Chromatic was designed for my own personal intellectural curiosity of web 
-  browsers while studying the Chomium source code.
+  Inspired by *Web Browser Engineering* by Pavel Panchekha and Chris Harrelson, 
+  Chromatic was designed for my own personal curiosity of web 
+  browsers while studying the Chromium source code.
   Chromatic handles industry standards of all browsers, such as rendering, 
   layout, and network handling in pure Python. It's a minimal, yet functional 
   web browser; ideal for educational purposes and low-level systems exploration.
-
-  *Chromatic is a completely standalone browser with absolutely no frameworks 
-  or external packages, just* **raw code**.
+  
   
 ## Run Locally  
 Clone the project  
@@ -30,5 +29,5 @@ Render a webpage
 ~~~bash  
   python3 render.py https://browser.engineering/examples/xiyouji.html
 ~~~  
-> *Note: Webpage must include 'HTTPS' or HTTP'*
+> *Note: URL must include 'HTTPS' or HTTP'*
 
