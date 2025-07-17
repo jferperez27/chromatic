@@ -73,6 +73,13 @@ class URL:
 
         return content
 
+class Text:
+    def __init__(self, text):
+        self.text = text
+
+class Tag:
+    def __init__(self, tag):
+        self.tag = tag
 
 def show(body):
     """
@@ -91,16 +98,23 @@ def lex(body):
     """
     Parses through each character in HTML code, returns all text.
     """
-    text = ""
+    out = []
+    buffer = ""
     in_tag = False
     for char in body:
         if char == "<":
             in_tag = True
+            if buffer: out.append(Text(buffer))
+            buffer = ""
         elif char == ">":
             in_tag = False
-        elif not in_tag:
-            text += char
-    return text
+            out.append(Tag(buffer))
+            buffer = ""
+        else:
+            buffer += char
+    if not in_tag and buffer:
+            out.append(Text(buffer))
+    return out
 
 def load(url):
     """

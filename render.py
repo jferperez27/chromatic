@@ -1,6 +1,8 @@
 import tkinter
+import tkinter.font
 from tkinter import ttk
 from browse import URL
+from browse import Text
 import browse as b
 import re
 
@@ -8,6 +10,7 @@ WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
 SCROLL_STEP = 100
 MAX_Y = 600
+FONTS = {}
 
 
 class Browser:
@@ -38,10 +41,10 @@ class Browser:
         Obtains source code, delegates to other methods.
         """
         body = url.request()
-        text = b.lex(body)
+        tokens = b.lex(body)
 
-        self.display_list = layout(text)
-        self.text = text
+        self.display_list = Layout(tokens).display_list
+        self.tokens = tokens
         self.draw()
 
     def draw(self):
@@ -51,11 +54,11 @@ class Browser:
         max_bottom = HEIGHT
 
         self.canvas.delete("all")
-        for x, y, c in self.display_list:
+        for x, y, word, f in self.display_list:
             max_bottom = max(max_bottom, y)
             if y > self.scroll + HEIGHT: continue
             if y + VSTEP < self.scroll: continue
-            self.canvas.create_text(x, y - self.scroll, text=c)
+            self.canvas.create_text(x, y - self.scroll, text=word, font=f, anchor='nw')
 
         self.max_scroll = max(0, max_bottom - self.canvas.winfo_height())
 
@@ -158,45 +161,96 @@ class Browser:
         if e.width != WIDTH and e.height != HEIGHT:
             WIDTH = e.width
             HEIGHT = e.height
-            self.display_list = layout(self.text)
+            self.display_list = Layout(self.tokens).display_list
             self.draw()
 
-def layout(text):
-    """
-    Formulates list containing all text and x,y coords for each character
-    """
-    display_list = []
-    cursor_x, cursor_y = HSTEP, VSTEP
+class Layout:
+    def __init__(self, tokens):
+        self.display_list = []
+        self.line = []
+        self.cursor_x = HSTEP
+        self.cursor_y = VSTEP
+        self.weight = "normal"
+        self.style = "roman"
+        self.size = 12
 
-    is_cjk = bool(re.search(r'[\u4e00-\u9fff]', text))
+        for tok in tokens:
+            self.token(tok)
+        
+        self.flush()
 
-    for line in text.split("\n"):
-        if is_cjk:
-            for char in line:
-                if cursor_x + HSTEP >= WIDTH - HSTEP:
-                    cursor_x = HSTEP
-                    cursor_y += VSTEP
-                display_list.append((cursor_x, cursor_y, char))
-                cursor_x += HSTEP
-            cursor_x += HSTEP
-            pass
-        else:
-            for word in line.split():
-                width = len(word) * HSTEP
-                if cursor_x + width + HSTEP >= WIDTH - HSTEP:
-                    # if out of range
-                    cursor_x = HSTEP
-                    cursor_y += VSTEP ## Originally: VSTEP
-                for char in word:
-                    display_list.append((cursor_x, cursor_y, char))
-                    cursor_x += HSTEP
-                cursor_x += HSTEP
+    def token(self, tok):
+        if isinstance(tok, Text):
+            for word in tok.text.split():
+                self.word(word)
+            #for match in re.finditer(r'\S+|\s+', tok.text.split):
+            #    self.word(match.group())
+        elif tok.tag == "i":
+            self.style = "italic"
+        elif tok.tag == "/i":
+            self.style = "roman"
+        elif tok.tag == "b":
+            self.weight = "bold"
+        elif tok.tag == "/b":
+            self.weight = "normal"
+        elif tok.tag == "small":
+            self.size -= 2
+        elif tok.tag == "/small":
+            self.size += 2
+        elif tok.tag == "big":
+            self.size += 4
+        elif tok.tag == "/big":
+            self.size -= 4
+        elif tok.tag == "br":
+            self.flush()
+        elif tok.tag == "/p":
+            self.flush()
+            self.cursor_y += VSTEP
+    
+    def word(self, word):
+        font = get_font(self.size, self.weight, self.style)
+        w = font.measure(word)
 
-        cursor_y += VSTEP ## Originally: VSTEP*2
-        cursor_x = HSTEP
+        if self.cursor_x + w > WIDTH - HSTEP:
+            # if out of range
+            self.flush()
+                
+        #self.display_list.append((self.cursor_x, self.cursor_y, word, font))
+        self.line.append((self.cursor_x, word, font))
+        self.cursor_x += w + font.measure(" ")
 
-    return display_list
+    def flush(self):
+        if not self.line: return
+        metrics = [font.metrics() for x, word, font in self.line]
+        max_ascent = max([metric["ascent"] for metric in metrics])
+        baseline = self.cursor_y + 1.25 * max_ascent
+        iterate = 0
+        for (x, word, font) in self.line:
+            print(iterate)
+            y = baseline - font.metrics("ascent")
+            self.display_list.append((x, y, word, font))
+            #if iterate == 1:
+              #  break
+            #iterate += 1
+            #break
+        
+        max_descent = max([metric["descent"] for metric in metrics])
+        self.cursor_y = baseline + 1.25 * max_descent
 
+        self.cursor_x = HSTEP
+        self.line = []
+
+def get_font(size, weight, style):
+    key = (size, weight, style)
+    if key not in FONTS:
+        font = tkinter.font.Font(
+            size=size,
+            weight=weight,
+            slant=style
+            )
+        label = tkinter.Label(font=font)
+        FONTS[key] = (font, label)
+    return FONTS[key][0]
 
 if __name__ == "__main__":
     import sys
