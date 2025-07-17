@@ -4,7 +4,6 @@ from tkinter import ttk
 from browse import URL
 from browse import Text
 import browse as b
-import re
 
 WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
@@ -114,10 +113,6 @@ class Browser:
             delta = e.delta / 120
 
         pros_scroll_loc = self.scroll + (-1 * delta * 5)
-        
-        # DEBUG --
-        #print(f"pros {pros_scroll_loc}")
-        #print(f"cur {self.scroll}")
 
         if pros_scroll_loc < 0:
             self.scroll = 0
@@ -166,6 +161,9 @@ class Browser:
 
 class Layout:
     def __init__(self, tokens):
+        """
+        Sorts through all tokens. 
+        """
         self.display_list = []
         self.line = []
         self.cursor_x = HSTEP
@@ -180,11 +178,12 @@ class Layout:
         self.flush()
 
     def token(self, tok):
+        """
+        Checks what type of token a token is, delegates to specific function.
+        """
         if isinstance(tok, Text):
             for word in tok.text.split():
                 self.word(word)
-            #for match in re.finditer(r'\S+|\s+', tok.text.split):
-            #    self.word(match.group())
         elif tok.tag == "i":
             self.style = "italic"
         elif tok.tag == "/i":
@@ -208,6 +207,10 @@ class Layout:
             self.cursor_y += VSTEP
     
     def word(self, word):
+        """
+        Gets a word, sets font, finds appropriate location for rendering,
+        adds to self.line while updating x, y values for future words.
+        """
         font = get_font(self.size, self.weight, self.style)
         w = font.measure(word)
 
@@ -215,24 +218,23 @@ class Layout:
             # if out of range
             self.flush()
                 
-        #self.display_list.append((self.cursor_x, self.cursor_y, word, font))
         self.line.append((self.cursor_x, word, font))
         self.cursor_x += w + font.measure(" ")
 
     def flush(self):
+        """
+        Gathers font metrics, computes a baseline for all words, computes
+        y-pos for all words so they all sit on baseline, adds these values to
+        display_list, y-value step down, resets self.line for upcoming lines.
+        """
         if not self.line: return
         metrics = [font.metrics() for x, word, font in self.line]
         max_ascent = max([metric["ascent"] for metric in metrics])
         baseline = self.cursor_y + 1.25 * max_ascent
-        iterate = 0
+
         for (x, word, font) in self.line:
-            print(iterate)
             y = baseline - font.metrics("ascent")
             self.display_list.append((x, y, word, font))
-            #if iterate == 1:
-              #  break
-            #iterate += 1
-            #break
         
         max_descent = max([metric["descent"] for metric in metrics])
         self.cursor_y = baseline + 1.25 * max_descent
@@ -241,6 +243,10 @@ class Layout:
         self.line = []
 
 def get_font(size, weight, style):
+    """
+    Stores font if not in cache memory, otherwise stores font for future
+    reference. Impactful for Windows and Linux, not so much for MacOS.
+    """
     key = (size, weight, style)
     if key not in FONTS:
         font = tkinter.font.Font(
