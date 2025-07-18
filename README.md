@@ -27,7 +27,7 @@ Navigate to project directory
 Render a webpage
 
 ~~~bash  
-  python3 render.py https://browser.engineering/examples/xiyouji.html
+  python3 main.py https://browser.engineering/examples/xiyouji.html
 ~~~  
 > *Note: URL must include 'HTTPS' or HTTP'*
 
