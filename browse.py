@@ -96,7 +96,7 @@ def show(body):
 
 def lex(body):
     """
-    Parses through each character in HTML code, returns all text.
+    Parses through each character in HTML code, returns list of tokens.
     """
     out = []
     buffer = ""

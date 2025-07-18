@@ -258,7 +258,11 @@ def get_font(size, weight, style):
         FONTS[key] = (font, label)
     return FONTS[key][0]
 
-if __name__ == "__main__":
-    import sys
-    Browser().load(URL(sys.argv[1]))
+# if __name__ == "__main__":
+#     import sys
+#     Browser().load(URL(sys.argv[1]))
+#     tkinter.mainloop()
+
+def start(arg):
+    Browser().load(URL(arg))
     tkinter.mainloop()
