@@ -4,6 +4,7 @@ from tkinter import ttk
 from browse import URL
 from browse import Text
 import browse as b
+import sys
 
 WIDTH, HEIGHT = 800, 600
 HSTEP, VSTEP = 13, 18
