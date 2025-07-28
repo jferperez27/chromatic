@@ -63,7 +63,8 @@ class Browser:
         """
         Visualizes all characters onto screen.
         """
-        max_bottom = HEIGHT
+        #max_bottom = HEIGHT
+        max_bottom = self.document.height + 2*VSTEP
 
         self.canvas.delete("all")
         for cmd in self.display_list:
@@ -72,7 +73,6 @@ class Browser:
             cmd.execute(self.scroll, self.canvas)
 
         self.max_scroll = max(0, max_bottom - self.canvas.winfo_height())
-
         ## Update scrollbar y-value logic
 
         self.canvas.config(scrollregion=(0, 0, WIDTH, self.max_scroll))
@@ -88,26 +88,16 @@ class Browser:
         """
         Handles down arrow key event.
         """
-        pros_scroll = self.scroll + SCROLL_STEP
-
-        if pros_scroll > self.max_scroll:
-            self.scroll = self.max_scroll
-        else:
-            self.scroll += SCROLL_STEP
+        max_y = max(self.document.height + 2*VSTEP - HEIGHT, 0)
+        self.scroll = min(self.scroll + SCROLL_STEP, max_y)
         self.draw()
 
     def scrollup(self, e):
         """
         Handles up arrow key event.
         """
-        pros_scroll = self.scroll - SCROLL_STEP
-
-        if not pros_scroll < 0:
-            self.scroll -= SCROLL_STEP
-            self.draw()
-        else:
-            self.scroll = 0
-            self.draw()
+        self.scroll = max(self.scroll - SCROLL_STEP, 0)
+        self.draw()
 
     def mousewheel(self, e):
         """
@@ -168,7 +158,7 @@ class Browser:
         if e.width != WIDTH and e.height != HEIGHT:
             WIDTH = e.width
             HEIGHT = e.height
-            paint_tree(self.document, self.display_list)
+            #paint_tree(self.document, self.display_list)
             self.draw()
 
 class DocumentLayout:
@@ -177,10 +167,10 @@ class DocumentLayout:
         self.parent = None
         self.children = []
 
-        self.x = None
-        self.y = None
-        self.width = None
-        self.height = None
+        self.x = 0
+        self.y = 0
+        self.width = 0
+        self.height = 0
         
     def layout(self):
         child = BlockLayout(self.node, self, None)
@@ -209,10 +199,11 @@ class BlockLayout:
         self.children = []
         self.display_list = []
 
-        self.x = None
-        self.y = None
-        self.width = None
-        self.height = None
+        ## Default values instead of 'None' to suppress warnings.
+        self.x = 0
+        self.y = 0
+        self.width = 0
+        self.height = 0 
 
 
     def layout_mode(self):
