@@ -431,7 +431,7 @@ class CSSParser:
     
     def body(self):
         pairs = {}
-        while self.i < len(self.s):
+        while self.i < len(self.s) and self.s[self.i] != "}":
             try:
                 prop, val = self.pair()
                 pairs[prop] = val
@@ -439,7 +439,7 @@ class CSSParser:
                 self.literal(";")
                 self.whitespace()
             except Exception:
-                why = self.ignore_until([";"])
+                why = self.ignore_until([";", "}"])
                 if why == ";":
                     self.literal(";")
                     self.whitespace()
@@ -458,6 +458,39 @@ class CSSParser:
                 self.i += 1
         return None
     
+    def selector(self):
+        """
+        Parsing function to create selector objects
+        """
+        out = TagSelector(self.word().casefold())
+        self.whitespace()
+        while self.i < len(self.s) and self.s[self.i] != "{":
+            tag = self.word()
+            descendant = TagSelector(tag.casefold())
+            out = DescendantSelector(out, descendant)
+            self.whitespace()
+        return out
+    
+class TagSelector:
+    def __init__(self, tag):
+        self.tag = tag
+    
+    def matches(self, node):
+        return isinstance(node, b.Element) and self.tag == node.tag
+    
+
+class DescendantSelector:
+    def __init__(self, ancestor, descendant):
+        self.ancestor = ancestor
+        self. descendant = descendant
+
+    def matches(self, node):
+        if not self.descendant.matches(node): return False
+        while node.parent:
+            if self.ancestor.matches(node.parent): return True
+            node = node.parent
+        return False
+
 def style(node):
     node.style = {}
     if isinstance(node, b.Element) and "style" in node.attributes:
