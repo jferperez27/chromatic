@@ -20,7 +20,112 @@ BLOCK_ELEMENTS = [
     "legend", "details", "summary"
 ]
 
+class CSSParser:
+    def __init__(self, s):
+        self.s = s
+        self.i = 0 # Current pos.
 
+    def whitespace(self):
+        """
+        Whitespace increments have no parsed data to return.
+        """
+        while self.i < len(self.s) and self.s[self.i].isspace():
+            self.i += 1
+
+    def word(self):
+        """
+        Increments through word characters, returns substring it moved through.
+        """
+        start = self.i
+        while self.i < len(self.s):
+            if self.s[self.i].isalnum() or self.s[self.i] in "#-.%":
+                self.i += 1
+            else:
+                break
+        if not (self.i > start):
+            raise Exception("Parsing error")
+        return self.s[start:self.i]
+    
+    def literal(self, literal):
+        """
+        Checks for literals, punctutation chars.
+        """
+        if not (self.i < len(self.s) and self.s[self.i] == literal):
+            raise Exception("Parsing error")
+        self.i += 1
+
+    def pair(self):
+        prop = self.word()
+        self.whitespace()
+        self.literal(":")
+        self.whitespace()
+        val = self.word()
+        return prop.casefold(), val
+    
+    def body(self):
+        pairs = {}
+        while self.i < len(self.s) and self.s[self.i] != "}":
+            try:
+                prop, val = self.pair()
+                pairs[prop] = val
+                self.whitespace()
+                self.literal(";")
+                self.whitespace()
+            except Exception:
+                why = self.ignore_until([";", "}"])
+                if why == ";":
+                    self.literal(";")
+                    self.whitespace()
+                else:
+                    break
+        return pairs
+    
+    def parse(self):
+        rules = []
+        while self.i < len(self.s):
+            try:
+                self.whitespace()
+                selector = self.selector()
+                self.literal("{")
+                self.whitespace()
+                body = self.body()
+                self.literal("}")
+                rules.append((selector, body))
+            except Exception:
+                why = self.ignore_until(["}"])
+                if why == "}":
+                    self.literal("}")
+                    self.whitespace()
+                else:
+                    break
+        return rules
+    
+    def ignore_until(self, chars):
+        """
+        Error handling for property-value pairs that don't parse.
+        """
+        while self.i < len(self.s):
+            if self.s[self.i] in chars:
+                return self.s[self.i]
+            else:
+                self.i += 1
+        return None
+    
+    def selector(self):
+        """
+        Parsing function to create selector objects
+        """
+        out = TagSelector(self.word().casefold())
+        self.whitespace()
+        while self.i < len(self.s) and self.s[self.i] != "{":
+            tag = self.word()
+            descendant = TagSelector(tag.casefold())
+            out = DescendantSelector(out, descendant)
+            self.whitespace()
+        return out
+    
+DEFAULT_STYLE_SHEET = CSSParser(open("browser.css").read()).parse()
+    
 class Browser:
     def __init__(self):
         self.window = tkinter.Tk()
@@ -52,7 +157,22 @@ class Browser:
         self.nodes = b.HTMLParser(body).parse()
         #b.print_tree(self.nodes) TO PRINT TREE IN TERMINAL
 
-        style(self.nodes) 
+        rules = DEFAULT_STYLE_SHEET.copy()
+        links = [node.attributes["href"]
+            for node in tree_to_list(self.nodes, [])
+            if isinstance(node, b.Element)
+            and node.tag == "link"
+            and node.attributes.get("rel") == "stylesheet"
+            and "href" in node.attributes]
+        for link in links:
+            style_url = url.resolve(link)
+            try:
+                body = style_url.request()
+            except:
+                continue
+            rules.extend(CSSParser(body).parse())
+
+        style(self.nodes, rules) 
         ## call style in load method, after parsing HTML, before layout
 
         self.document = DocumentLayout(self.nodes)
@@ -386,90 +506,6 @@ class DrawRect:
             width = 0,
             fill = self.color
         )
-
-class CSSParser:
-    def __init__(self, s):
-        self.s = s
-        self.i = 0 # Current pos.
-
-    def whitespace(self):
-        """
-        Whitespace increments have no parsed data to return.
-        """
-        while self.i < len(self.s) and self.s[self.i].isspace():
-            self.i += 1
-
-    def word(self):
-        """
-        Increments through word characters, returns substring it moved through.
-        """
-        start = self.i
-        while self.i < len(self.s):
-            if self.s[self.i].isalnum() or self.s[self.i] in "#-.%":
-                self.i += 1
-            else:
-                break
-        if not (self.i > start):
-            raise Exception("Parsing error")
-        return self.s[start:self.i]
-    
-    def literal(self, literal):
-        """
-        Checks for literals, punctutation chars.
-        """
-        if not (self.i < len(self.s) and self.s[self.i] == literal):
-            raise Exception("Parsing error")
-        self.i += 1
-
-    def pair(self):
-        prop = self.word()
-        self.whitespace()
-        self.literal(":")
-        self.whitespace()
-        val = self.word()
-        return prop.casefold(), val
-    
-    def body(self):
-        pairs = {}
-        while self.i < len(self.s) and self.s[self.i] != "}":
-            try:
-                prop, val = self.pair()
-                pairs[prop] = val
-                self.whitespace()
-                self.literal(";")
-                self.whitespace()
-            except Exception:
-                why = self.ignore_until([";", "}"])
-                if why == ";":
-                    self.literal(";")
-                    self.whitespace()
-                else:
-                    break
-        return pairs
-    
-    def ignore_until(self, chars):
-        """
-        Error handling for property-value pairs that don't parse.
-        """
-        while self.i < len(self.s):
-            if self.s[self.i] in chars:
-                return self.s[self.i]
-            else:
-                self.i += 1
-        return None
-    
-    def selector(self):
-        """
-        Parsing function to create selector objects
-        """
-        out = TagSelector(self.word().casefold())
-        self.whitespace()
-        while self.i < len(self.s) and self.s[self.i] != "{":
-            tag = self.word()
-            descendant = TagSelector(tag.casefold())
-            out = DescendantSelector(out, descendant)
-            self.whitespace()
-        return out
     
 class TagSelector:
     def __init__(self, tag):
@@ -491,14 +527,18 @@ class DescendantSelector:
             node = node.parent
         return False
 
-def style(node):
+def style(node, rules):
     node.style = {}
+    for selector, body in rules:
+        if not selector.matches(node): continue
+        for property, value in body.items():
+            node.style[property] = value
     if isinstance(node, b.Element) and "style" in node.attributes:
         pairs = CSSParser(node.attributes["style"]).body()
         for property, value in pairs.items():
             node.style[property] = value
     for child in node.children:
-        style(child)
+        style(child, rules)
 
 def get_font(size, weight, style):
     """
@@ -521,6 +561,12 @@ def paint_tree(layout_object, display_list):
 
     for child in layout_object.children:
         paint_tree(child, display_list)
+
+def tree_to_list(tree, list):
+    list.append(tree)
+    for child in tree.children:
+        tree_to_list(child, list)
+    return list
 
 
 def start(arg):
