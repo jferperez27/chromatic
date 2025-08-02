@@ -172,7 +172,7 @@ class Browser:
                 continue
             rules.extend(CSSParser(body).parse())
 
-        style(self.nodes, rules) 
+        style(self.nodes, sorted(rules, key=cascade_priority))
         ## call style in load method, after parsing HTML, before layout
 
         self.document = DocumentLayout(self.nodes)
@@ -510,6 +510,7 @@ class DrawRect:
 class TagSelector:
     def __init__(self, tag):
         self.tag = tag
+        self.priority = 1
     
     def matches(self, node):
         return isinstance(node, b.Element) and self.tag == node.tag
@@ -518,7 +519,8 @@ class TagSelector:
 class DescendantSelector:
     def __init__(self, ancestor, descendant):
         self.ancestor = ancestor
-        self. descendant = descendant
+        self.descendant = descendant
+        self.priority = ancestor.priority + descendant.priority
 
     def matches(self, node):
         if not self.descendant.matches(node): return False
@@ -539,6 +541,10 @@ def style(node, rules):
             node.style[property] = value
     for child in node.children:
         style(child, rules)
+
+def cascade_priority(rule):
+    selector, body = rule
+    return selector.priority
 
 def get_font(size, weight, style):
     """
