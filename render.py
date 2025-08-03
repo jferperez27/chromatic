@@ -19,6 +19,12 @@ BLOCK_ELEMENTS = [
     "figcaption", "main", "div", "table", "form", "fieldset",
     "legend", "details", "summary"
 ]
+INHERITED_PROPERTIES = {
+    "font-size": "16px",
+    "font-style": "normal",
+    "font-weight": "normal",
+    "color": "black",
+}
 
 class CSSParser:
     def __init__(self, s):
@@ -531,14 +537,37 @@ class DescendantSelector:
 
 def style(node, rules):
     node.style = {}
+
+    # Inheritance
+    for property, default_value in INHERITED_PROPERTIES.items():
+        if node.parent:
+            node.style[property] = node.parent.style[property]
+        else:
+            node.style[property] = default_value
+
+    # CSS Rules Applied
     for selector, body in rules:
         if not selector.matches(node): continue
         for property, value in body.items():
             node.style[property] = value
+        
+    # Inline styles
     if isinstance(node, b.Element) and "style" in node.attributes:
         pairs = CSSParser(node.attributes["style"]).body()
         for property, value in pairs.items():
             node.style[property] = value
+    
+    # Compute font sizes (%)
+    if node.style["font-size"].endswith("%"):
+        if node.parent:
+            parent_font_size = node.parent.style["font-size"]
+        else:
+            parent_font_size = INHERITED_PROPERTIES["font-size"]
+        node_pct = float(node.style["font-size"][:-1]) / 100
+        parent_px = float(parent_font_size[:-2])
+        node.style["font-size"] = str(node_pct * parent_px) + "px"
+
+    # Recurse children
     for child in node.children:
         style(child, rules)
 
