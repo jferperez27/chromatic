@@ -139,7 +139,8 @@ class Browser:
             self.window,
             width=WIDTH,
             height=HEIGHT,
-            scrollregion=(0, 0, WIDTH, HEIGHT)
+            scrollregion=(0, 0, WIDTH, HEIGHT),
+            bg="white"
         )
         self.canvas.pack(fill="both", expand=True)
         self.scroll = 0
@@ -412,29 +413,41 @@ class BlockLayout:
             self.flush()
             self.cursor_y += VSTEP
 
-    def recuse(self, tree):
-        if isinstance(tree, Text):
-            for word in tree.text.split():
-                self.word(word)
+    def recuse(self, node):
+        if isinstance(node, Text):
+            for word in node.text.split():
+                self.word(node, word)
         else:
-            self.open_tag(tree.tag)
-            for child in tree.children:
+            if node.tag == "br":
+                self.flush()
+            for child in node.children:
                 self.recuse(child)
-            self.close_tag(tree.tag)
+
+            # self.open_tag(tree.tag)
+            # for child in tree.children:
+            #     self.recuse(child)
+            # self.close_tag(tree.tag)
     
-    def word(self, word):
+    def word(self, node, word):
         """
         Gets a word, sets font, finds appropriate location for rendering,
         adds to self.line while updating x, y values for future words.
         """
-        font = get_font(self.size, self.weight, self.style)
+        weight = node.style["font-weight"]
+        style = node.style["font-style"]
+        if style == "normal": style = "roman"
+        size = int(float(node.style["font-size"][:-2]) * .75)
+        font = get_font(size, weight, style)
+        color = node.style["color"]
+
+        #font = get_font(self.size, self.weight, self.style)
         w = font.measure(word)
 
         if self.cursor_x + w > self.width:
             # if out of range
             self.flush()
                 
-        self.line.append((self.cursor_x, word, font))
+        self.line.append((self.cursor_x, word, font, color))
         self.cursor_x += w + font.measure(" ")
 
     def flush(self):
@@ -444,14 +457,14 @@ class BlockLayout:
         display_list, y-value step down, resets self.line for upcoming lines.
         """
         if not self.line: return
-        metrics = [font.metrics() for x, word, font in self.line]
+        metrics = [font.metrics() for x, word, font, color in self.line]
         max_ascent = max([metric["ascent"] for metric in metrics])
         baseline = self.cursor_y + 1.25 * max_ascent
 
-        for rel_x, word, font in self.line:
+        for rel_x, word, font, color in self.line:
             x = self.x + rel_x
             y = self.y + baseline - font.metrics("ascent")
-            self.display_list.append((x, y, word, font))
+            self.display_list.append((x, y, word, font, color))
         
         max_descent = max([metric["descent"] for metric in metrics])
         self.cursor_y = baseline + 1.25 * max_descent
@@ -477,17 +490,18 @@ class BlockLayout:
 
         # inline text
         if self.layout_mode() == "inline":
-            for x, y, word, font in self.display_list:
-                cmds.append(DrawText(x, y, word, font))
+            for x, y, word, font, color in self.display_list:
+                cmds.append(DrawText(x, y, word, font, color))
         return cmds
 
     
 class DrawText:
-    def __init__(self, x1, y1, text, font):
+    def __init__(self, x1, y1, text, font, color):
         self.top = y1
         self.left = x1
         self.text = text
         self.font = font
+        self.color = color
         self.bottom = y1 + font.metrics('linespace')
 
     def execute(self, scroll, canvas):
@@ -495,6 +509,7 @@ class DrawText:
             self.left, self.top - scroll,
             text = self.text,
             font = self.font,
+            fill = self.color,
             anchor='nw')
 
 class DrawRect:
