@@ -377,7 +377,7 @@ class BlockLayout:
             self.style = "roman"
             self.size = 12
             self.line = []
-            self.recuse(self.node)
+            self.recurse(self.node)
             self.flush()
             self.height = self.cursor_y
     
@@ -413,7 +413,7 @@ class BlockLayout:
             self.flush()
             self.cursor_y += VSTEP
 
-    def recuse(self, node):
+    def recurse(self, node):
         if isinstance(node, Text):
             for word in node.text.split():
                 self.word(node, word)
@@ -421,7 +421,7 @@ class BlockLayout:
             if node.tag == "br":
                 self.flush()
             for child in node.children:
-                self.recuse(child)
+                self.recurse(child)
 
             # self.open_tag(tree.tag)
             # for child in tree.children:
