@@ -232,29 +232,6 @@ def show(body):
         elif not in_tag:
             print(char, end="")
 
-def lex(body):
-    """
-    Parses through each character in HTML code, returns list of tokens.
-    """
-    # out = []
-    # buffer = ""
-    # in_tag = False
-    # for char in body:
-    #     if char == "<":
-    #         in_tag = True
-    #         if buffer: out.append(Text(buffer))
-    #         buffer = ""
-    #     elif char == ">":
-    #         in_tag = False
-    #         out.append(Tag(buffer))
-    #         buffer = ""
-    #     else:
-    #         buffer += char
-    # if not in_tag and buffer:
-    #         out.append(Text(buffer))
-    # return out
-    pass
-
 def load(url):
     """
     Loads a URL by calling on helper methods, returns web text.
