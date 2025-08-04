@@ -134,6 +134,7 @@ DEFAULT_STYLE_SHEET = CSSParser(open("browser.css").read()).parse()
     
 class Browser:
     def __init__(self):
+        self.DEFAULT_STYLE_SHEET = CSSParser(open("browser.css").read()).parse()
         self.window = tkinter.Tk()
         self.canvas = tkinter.Canvas(
             self.window,
@@ -156,6 +157,7 @@ class Browser:
                                   command = self.on_scroll)
         self.scrollbar.place(relx = 1, rely = 0, relheight = 1, anchor = "ne")
 
+
     def load(self, url):
         """
         Obtains source code, delegates to other methods.
@@ -164,7 +166,7 @@ class Browser:
         self.nodes = b.HTMLParser(body).parse()
         #b.print_tree(self.nodes) TO PRINT TREE IN TERMINAL
 
-        rules = DEFAULT_STYLE_SHEET.copy()
+        rules = self.DEFAULT_STYLE_SHEET.copy()
         links = [node.attributes["href"]
             for node in tree_to_list(self.nodes, [])
             if isinstance(node, b.Element)
@@ -530,7 +532,7 @@ class DrawRect:
     
 class TagSelector:
     def __init__(self, tag):
-        self.tag = tag
+        self.tag = tag.lower()
         self.priority = 1
     
     def matches(self, node):
