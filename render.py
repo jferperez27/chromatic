@@ -424,11 +424,6 @@ class BlockLayout:
                 self.flush()
             for child in node.children:
                 self.recurse(child)
-
-            # self.open_tag(tree.tag)
-            # for child in tree.children:
-            #     self.recuse(child)
-            # self.close_tag(tree.tag)
     
     def word(self, node, word):
         """
@@ -483,12 +478,6 @@ class BlockLayout:
             x2, y2 = self.x + self.width, self.y + self.height
             rect = DrawRect(self.x, self.y, x2, y2, bgcolor)
             cmds.append(rect)
-
-        # <pre> backgrounds
-        # if isinstance(self.node, b.Element) and self.node.tag == "pre":
-        #     x2, y2 = self.x + self.width, self.y + self.height
-        #     rect = DrawRect(self.x, self.y, x2, y2, "gray")
-        #     cmds.append(rect)
 
         # inline text
         if self.layout_mode() == "inline":
