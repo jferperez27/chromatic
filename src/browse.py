@@ -74,6 +74,21 @@ class URL:
 
         return content
 
+    def resolve(self, url):
+        if "://" in url: return URL(url)
+        if not url.startswith("/"):
+            dir, _ = self.path.rsplit("/", 1)
+            while url.startswith("../"):
+                _, url = url.split("/", 1)
+                if "/" in dir:
+                    dir, _ = dir.rsplit("/", 1)
+            url = dir + "/" + url
+        if url.startswith("//"):
+            return URL(self.scheme + ":" + url)
+        else:
+            return URL(self.scheme + "://" + self.host \
+                       + ":" + str(self.port) + url)
+
 class Text:
     def __init__(self, text, parent):
         self.text = text
@@ -217,35 +232,11 @@ def show(body):
         elif not in_tag:
             print(char, end="")
 
-def lex(body):
-    """
-    Parses through each character in HTML code, returns list of tokens.
-    """
-    # out = []
-    # buffer = ""
-    # in_tag = False
-    # for char in body:
-    #     if char == "<":
-    #         in_tag = True
-    #         if buffer: out.append(Text(buffer))
-    #         buffer = ""
-    #     elif char == ">":
-    #         in_tag = False
-    #         out.append(Tag(buffer))
-    #         buffer = ""
-    #     else:
-    #         buffer += char
-    # if not in_tag and buffer:
-    #         out.append(Text(buffer))
-    # return out
-    pass
-
 def load(url):
     """
     Loads a URL by calling on helper methods, returns web text.
     """
     body = url.request()
-    #return lex(body
     parser = HTMLParser(body)
     return parser.parse()
 
@@ -256,7 +247,6 @@ def print_tree(node, indent=0):
 
 if __name__ == "__main__":
     import sys
-    #load(URL(sys.argv[1]))
     body = URL(sys.argv[1]).request()
     nodes = HTMLParser(body).parse()
     print_tree(nodes)
