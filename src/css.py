@@ -1,4 +1,4 @@
-from browse import Element
+from src.browse import Element
 
 INHERITED_PROPERTIES = {
     "font-size": "16px",
@@ -167,7 +167,7 @@ def style(node, rules):
     # Recurse children
     for child in node.children:
         style(child, rules)
-        
+
 def cascade_priority(rule):
     selector, body = rule
     return selector.priority

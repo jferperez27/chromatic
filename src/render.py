@@ -1,8 +1,9 @@
 import tkinter
 from tkinter import ttk
-from browse import URL, Text, HTMLParser, Element
-from css import CSSParser, style, cascade_priority
-from utils import tree_to_list, DrawRect, DrawText, get_font
+from src.browse import URL, Text, HTMLParser, Element
+from src.css import CSSParser, style, cascade_priority
+from src.utils import tree_to_list, DrawRect, DrawText, get_font
+from pathlib import Path
 import sys
 
 WIDTH, HEIGHT = 800, 600
@@ -17,11 +18,16 @@ BLOCK_ELEMENTS = [
     "figcaption", "main", "div", "table", "form", "fieldset",
     "legend", "details", "summary"
 ]
-DEFAULT_STYLE_SHEET = CSSParser(open("browser.css").read()).parse()
+BASE_DIR = Path(__file__).resolve().parent
+CSS_PATH = BASE_DIR.parent / "assets" / "browser.css"
+
+
+with open(CSS_PATH, "r") as f:
+    DEFAULT_STYLE_SHEET = CSSParser(f.read()).parse()
     
 class Browser:
     def __init__(self):
-        self.DEFAULT_STYLE_SHEET = CSSParser(open("browser.css").read()).parse()
+        self.DEFAULT_STYLE_SHEET = DEFAULT_STYLE_SHEET#CSSParser(open("browser.css").read()).parse()
         self.window = tkinter.Tk()
         self.canvas = tkinter.Canvas(
             self.window,
